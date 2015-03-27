@@ -8,7 +8,9 @@
 #include "heap.h" 
 
 /* This is the node of the huffman tree */
-
+char ** mem;
+int count;
+int z;
 struct hufftreenode {
   int value;                            // the character being stored
   int weight;                           // the weight is the number of occurrences of the character in the file
@@ -20,11 +22,23 @@ struct hufftreenode {
 char * huffmancodes[256];  
 
   char * concat(char * prefix, char letter) {
-    printf("MEMORY ALLOCATION-->CONCAT %s \n", "");
     char * result = (char *)eecs345_malloc(strlen(prefix) + 2);
     sprintf(result, "%s%c", prefix, letter);
+    mem[count] = result;
+    count++;
     return result;
   }
+
+  void clearMem(){
+    for(z = 0; z < count; z++){
+      eecs345_free(mem[z]);
+    }
+  }
+
+// char * concat(char * prefix, char letter) {
+//   char * result = strcat(prefix, &letter);
+//   return result;
+// }
 
   int nodecompare(struct hufftreenode * node1, struct hufftreenode * node2) {
     int result;
@@ -41,18 +55,17 @@ char * huffmancodes[256];
   }
 
 void generateCode(struct hufftreenode * root, char * string) {
-  char * newstring = string;//(char *)eecs345_calloc(strlen(string), sizeof(char));
-  printf("MEMORY ALLOCATION %s \n", "");
+  //char * newstring = string;//(char *)eecs345_calloc(strlen(string), sizeof(char));
   if(root->leftchild == NULL && root->rightchild == NULL) {
     huffmancodes[root->value] = string;
   }
     else{
         if(root->leftchild != NULL) {
-        newstring = concat(string, '0');
+        char * newstring = concat(string, '0');
         generateCode(root->leftchild, newstring);
       }
         if(root->rightchild != NULL) {
-        newstring = concat(string, '1');
+        char * newstring = concat(string, '1');
         generateCode(root->rightchild, newstring);
       }
     }
@@ -78,6 +91,8 @@ int main(int argc, char *argv[]) {
   FILE *infile;
   int i, c;
   int counts[256];
+  mem = malloc(600*sizeof(char *));
+  count = 0;
 
   if (argc != 2) {
      printf("Usage: %s inputfile\n", argv[0]);
@@ -107,8 +122,7 @@ int main(int argc, char *argv[]) {
       newhufftreenode->weight = counts[i];
       newhufftreenode->leftchild = NULL;
       newhufftreenode->rightchild = NULL;
-      //printf("node value: %c \n", newhufftreenode->value);
-      //printf("node weight: %d \n", newhufftreenode->weight);
+
       add_to_heap(heap, newhufftreenode);
   }
 }
@@ -125,19 +139,11 @@ while(heap->endptr != 1) {
   temphufftreenode->leftchild = min1;
   temphufftreenode->rightchild = min2;
   temphufftreenode->weight = (min1->weight + min2->weight);
-  //printf("Min 1: %c \n", min1->value);
-  //printf("Min 2: %c \n", min2->value);
 
-  //printf("leftchild value: %c \n", min1->value);
-  //printf("rightchild value: %c \n", min2->value);
-  //printf("parent weight: %d \n", temphufftreenode->weight);
   add_to_heap(heap, temphufftreenode);
 
 }
 
-//char * concatTest = (char *)eecs345_calloc(1, sizeof(char));
-//concatTest = "JOOO";
-//printf("Concat test: %s \n", concat(concatTest, '1'));
 
 
   /**       4. When the heap is empty, the last thing you removed will be the root node of the Huffman tree. */
@@ -150,8 +156,6 @@ clearNodes(lastnode);
 eecs345_free(string);
   /**       6. Clean up all memory used.  */
 
-//eecs345_free(temphufftreenode);
-//eecs345_free(newhufftreenode);
   /** Ok, you will want to remove the next line.  I only added it so you can see that the "special" allocation works the same as normal allocation */
   //char * initialcode = eecs345_malloc(20);   /* LOOK! I am allocating memory without freeing it.  The test_tor_memoryleaks function will print an error! */
 
@@ -160,16 +164,11 @@ eecs345_free(string);
   for (i = 0; i < 256; i++) {
     if (counts[i] != 0) {
       printf("%3c  %5d  %s\n", i, counts[i], huffmancodes[i]);
-      eecs345_free(huffmancodes[i]);
+      //eecs345_free(huffmancodes[i]);
     }
   }
+  clearMem();
 
-  //eecs345_free(heap);
-
-   if(heap_empty(heap)){
-    printf("HEAP IS EMPTY! %s", "");
-   }
-  //eecs345_free(heap);
   /* Hopefully, you correctly handled all your memory allocations and deallocations */
   test_for_memoryleaks();
 }
