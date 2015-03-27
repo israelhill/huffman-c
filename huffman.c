@@ -20,6 +20,7 @@ struct hufftreenode {
 char * huffmancodes[256];  
 
   char * concat(char * prefix, char letter) {
+    printf("MEMORY ALLOCATION-->CONCAT %s \n", "");
     char * result = (char *)eecs345_malloc(strlen(prefix) + 2);
     sprintf(result, "%s%c", prefix, letter);
     return result;
@@ -40,29 +41,36 @@ char * huffmancodes[256];
   }
 
 void generateCode(struct hufftreenode * root, char * string) {
-  char * newstring = (char *)eecs345_calloc(strlen(string), sizeof(char));
+  char * newstring = string;//(char *)eecs345_calloc(strlen(string), sizeof(char));
+  printf("MEMORY ALLOCATION %s \n", "");
   if(root->leftchild == NULL && root->rightchild == NULL) {
-    //printf("Im here!! %s \n", "");
     huffmancodes[root->value] = string;
-    //eecs345_free(newstring);
   }
     else{
         if(root->leftchild != NULL) {
-        //printf("went left %s \n", "");
         newstring = concat(string, '0');
-        //printf("first else-if string: %s \n", concat(string, '0'));
         generateCode(root->leftchild, newstring);
-        //eecs345_free(newstring);
       }
         if(root->rightchild != NULL) {
         newstring = concat(string, '1');
-        //printf("went right %s \n", "");
         generateCode(root->rightchild, newstring);
-        //eecs345_free(newstring);
       }
     }
-    //eecs345_free(newstring);
-}                   
+}  
+
+void clearNodes(struct hufftreenode * node) {
+  if(node->leftchild != NULL && node->rightchild == NULL) {
+    clearNodes(node->leftchild);
+  }
+  else if(node->rightchild != NULL && node->leftchild == NULL) {
+    clearNodes(node->rightchild);
+  }
+  else if(node->leftchild != NULL && node->rightchild != NULL) {
+    clearNodes(node->leftchild);
+    clearNodes(node->rightchild);
+  }
+  eecs345_free(node);
+}                
 
 
 /* Read in a file.  Count the number of occurrences of each character in the file, and produce the Huffman tree and the Huffman codes for each character */
@@ -136,9 +144,10 @@ while(heap->endptr != 1) {
   /**       5. Traverse the Huffman tree starting from the root, creating code strings as you go.  When you go left, append a '0' to the code string, and when you go right, append a '1', */
   /**           to the code string.  When you get to a leaf, store the code string generated in codes[leafnode->value]. */
 char * string = (char *)eecs345_calloc(1, sizeof(char));
-string = "";
-generateCode(heap_remove_min(heap), string);
-eecs345_free(heap);
+struct hufftreenode * lastnode =  heap_remove_min(heap);
+generateCode(lastnode, string);
+clearNodes(lastnode);
+eecs345_free(string);
   /**       6. Clean up all memory used.  */
 
 //eecs345_free(temphufftreenode);
@@ -151,8 +160,15 @@ eecs345_free(heap);
   for (i = 0; i < 256; i++) {
     if (counts[i] != 0) {
       printf("%3c  %5d  %s\n", i, counts[i], huffmancodes[i]);
+      eecs345_free(huffmancodes[i]);
     }
   }
+
+  //eecs345_free(heap);
+
+   if(heap_empty(heap)){
+    printf("HEAP IS EMPTY! %s", "");
+   }
   //eecs345_free(heap);
   /* Hopefully, you correctly handled all your memory allocations and deallocations */
   test_for_memoryleaks();
